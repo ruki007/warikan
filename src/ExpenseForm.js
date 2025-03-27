@@ -121,10 +121,10 @@ const resetinput = () => {
     }
   };
 
-  useEffect(() => {
-    fetchExpenses(); // 初期化時に支払い記録を取得
-    fetchTransfers(); // 初期化時に支払い指示を計算
-  }, []);
+  seEffect(() => {
+    fetchExpenses();
+    fetchTransfers();
+  }, [fetchExpenses, fetchTransfers]);
 
   return (
     <div style = {{ textAlign: 'center' }}>
