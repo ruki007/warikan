@@ -11,7 +11,7 @@ const ExpenseForm = ({ projectName, members }) => {
   const [error, setError] = useState('');
   const [transfers, setTransfers] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const [editingExpense, setEditingExpense] = useState(null);
+  const [editingExpense, setEditingExpense] = useState(null); // 編集中の支出記録
 
   const handlePayeeChange = (index, value) => {
     const newPayees = [...payees];
@@ -30,15 +30,31 @@ const ExpenseForm = ({ projectName, members }) => {
     try {
       const projectRef = doc(db, "projects", projectName);
       const finalPayees = payees.includes('全員') ? members : payees;
-      await updateDoc(projectRef, {
-        expenses: arrayUnion({
-          payer: payer,
-          amount: parseFloat(amount),
-          purpose: purpose, // 用途を保存
-          payees: finalPayees
-        })
-      });
-      alert('支出が記録されました');
+
+      if (editingExpense) {
+        // 編集モードの場合
+        const updatedExpenses = expenses.map((expense) =>
+          expense === editingExpense
+            ? { payer, amount: parseFloat(amount), purpose, payees: finalPayees }
+            : expense
+        );
+        await updateDoc(projectRef, { expenses: updatedExpenses });
+        setExpenses(updatedExpenses);
+        setEditingExpense(null);
+        alert('支出が更新されました');
+      } else {
+        // 新規追加の場合
+        await updateDoc(projectRef, {
+          expenses: arrayUnion({
+            payer: payer,
+            amount: parseFloat(amount),
+            purpose: purpose,
+            payees: finalPayees
+          })
+        });
+        alert('支出が記録されました');
+      }
+
       resetInput();
       await fetchExpenses();
       await fetchTransfers();
@@ -47,11 +63,35 @@ const ExpenseForm = ({ projectName, members }) => {
     }
   };
 
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setPayer(expense.payer);
+    setAmount(expense.amount);
+    setPurpose(expense.purpose);
+    setPayees(expense.payees);
+  };
+
+  const handleDeleteExpense = async (expense) => {
+    setError('');
+
+    try {
+      const projectRef = doc(db, "projects", projectName);
+      const updatedExpenses = expenses.filter((exp) => exp !== expense);
+      await updateDoc(projectRef, { expenses: updatedExpenses });
+      setExpenses(updatedExpenses);
+      alert('支出が削除されました');
+      await fetchTransfers();
+    } catch (error) {
+      setError('支出の削除中にエラーが発生しました: ' + error.message);
+    }
+  };
+
   const resetInput = () => {
     setPayer('');
     setAmount('');
     setPurpose('');
     setPayees([]);
+    setEditingExpense(null);
   };
 
   const fetchExpenses = async () => {
@@ -133,7 +173,7 @@ const ExpenseForm = ({ projectName, members }) => {
           <button type="button" onClick={handleAddPayee}>受取人を追加</button>
         </div>
         <button type="button" onClick={resetInput}>リセット</button>
-        <button type="submit">保存</button>
+        <button type="submit">{editingExpense ? '更新' : '保存'}</button>
       </form>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <h2>記録一覧</h2>
@@ -141,6 +181,8 @@ const ExpenseForm = ({ projectName, members }) => {
         {expenses.map((expense, index) => (
           <li key={index}>
             {expense.payer} が {expense.amount} 円 ({expense.purpose}) を {expense.payees.join(', ')} に支払いました
+            <button onClick={() => handleEditExpense(expense)}>編集</button>
+            <button onClick={() => handleDeleteExpense(expense)}>削除</button>
           </li>
         ))}
       </ul>
