@@ -7,7 +7,7 @@ const ExpenseForm = ({ projectName, members }) => {
   const [payer, setPayer] = useState('');
   const [amount, setAmount] = useState('');
   const [purpose, setPurpose] = useState(''); // 用途を保存するステート
-  const [payees, setPayees] = useState([]);
+  const [payees, setPayees] = useState(['']); // デフォルトで1つの受取人枠を設定
   const [error, setError] = useState('');
   const [transfers, setTransfers] = useState([]);
   const [expenses, setExpenses] = useState([]);
@@ -21,6 +21,11 @@ const ExpenseForm = ({ projectName, members }) => {
 
   const handleAddPayee = () => {
     setPayees([...payees, '']);
+  };
+
+  const handleRemovePayee = (index) => {
+    const newPayees = payees.filter((_, i) => i !== index);
+    setPayees(newPayees);
   };
 
   const handleSubmit = async (e) => {
@@ -72,6 +77,10 @@ const ExpenseForm = ({ projectName, members }) => {
   };
 
   const handleDeleteExpense = async (expense) => {
+    if (!window.confirm('この支出記録を削除しますか？')) {
+      return;
+    }
+
     setError('');
 
     try {
@@ -90,7 +99,7 @@ const ExpenseForm = ({ projectName, members }) => {
     setPayer('');
     setAmount('');
     setPurpose('');
-    setPayees([]);
+    setPayees(['']); // リセット時に受取人を1つに戻す
     setEditingExpense(null);
   };
 
@@ -168,6 +177,9 @@ const ExpenseForm = ({ projectName, members }) => {
                 ))}
                 <option value="全員">全員</option>
               </select>
+              {payees.length > 1 && (
+                <button type="button" onClick={() => handleRemovePayee(index)}>削除</button>
+              )}
             </div>
           ))}
           <button type="button" onClick={handleAddPayee}>受取人を追加</button>
