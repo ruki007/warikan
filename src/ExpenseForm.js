@@ -121,7 +121,7 @@ const resetinput = () => {
     }
   };
 
-  seEffect(() => {
+  useEffect(() => {
     fetchExpenses();
     fetchTransfers();
   }, [fetchExpenses, fetchTransfers]);
