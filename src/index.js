@@ -1,4 +1,4 @@
-import 'core-js/stable'; // Modern JavaScript features polyfill
+import 'core-js'; // Modern JavaScript features polyfill
 import 'regenerator-runtime/runtime'; // Async/await polyfill
 import React from 'react';
 import { createRoot } from 'react-dom/client';
