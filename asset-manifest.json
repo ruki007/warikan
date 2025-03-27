@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/warikan/static/css/main.eb24dc8a.css",
-    "main.js": "/warikan/static/js/main.2c88d56c.js",
+    "main.js": "/warikan/static/js/main.0fc2d0b7.js",
     "index.html": "/warikan/index.html",
     "main.eb24dc8a.css.map": "/warikan/static/css/main.eb24dc8a.css.map",
-    "main.2c88d56c.js.map": "/warikan/static/js/main.2c88d56c.js.map"
+    "main.0fc2d0b7.js.map": "/warikan/static/js/main.0fc2d0b7.js.map"
   },
   "entrypoints": [
     "static/css/main.eb24dc8a.css",
-    "static/js/main.2c88d56c.js"
+    "static/js/main.0fc2d0b7.js"
   ]
 }
