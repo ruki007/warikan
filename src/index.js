@@ -1,4 +1,5 @@
-import 'babel-polyfill'; // 必要なポリフィルを提供
+import 'core-js/stable'; // Modern JavaScript features polyfill
+import 'regenerator-runtime/runtime'; // Async/await polyfill
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
