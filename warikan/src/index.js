@@ -7,6 +7,7 @@ import ExpenseForm from './ExpenseForm';
 import { doc, getDoc } from "firebase/firestore";
 import { db } from './firebaseConfig';
 import './index.css';
+import App from './App';
 
 const Home = () => {
   return (
