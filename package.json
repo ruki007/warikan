@@ -2,6 +2,9 @@
   "name": "warikan",
   "version": "0.1.0",
   "homepage": "https://ruki007.github.io/warikan/",
+  "babel": {
+  "presets": ["@babel/preset-env", "@babel/preset-react"]
+},
   "private": true,
   "dependencies": {
     "@babel/core": "^7.26.10",
@@ -44,5 +47,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+    
   }
 }
