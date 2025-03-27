@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import ProjectNameInput from './ProjectNameInput';
 import MemberInput from './MemberInput';
 import ExpenseForm from './ExpenseForm';
@@ -13,14 +13,14 @@ const Home = () => {
     <div style={{ textAlign: 'center' }}>
       <h1>Warika</h1>
       <div>
-        <a href="/new-game">
+        <Link to="/new-game">
           <button>New game</button>
-        </a>
+        </Link>
       </div>
       <div>
-        <a href="/load-game">
+        <Link to="/load-game">
           <button>Load game</button>
-        </a>
+        </Link>
       </div>
     </div>
   );
@@ -73,7 +73,7 @@ const App = () => {
   };
 
   return (
-    <Router>
+    <Router basename="/warikan">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route
