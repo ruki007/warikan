@@ -4,15 +4,19 @@
   "homepage": "https://ruki007.github.io/warikan/",
   "private": true,
   "dependencies": {
+    "@babel/preset-env": "^7.26.9",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^13.5.0",
+    "babel-polyfill": "^6.26.0",
+    "core-js": "^3.41.0",
     "firebase": "^11.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.4.0",
     "react-scripts": "5.0.1",
+    "regenerator-runtime": "^0.14.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
