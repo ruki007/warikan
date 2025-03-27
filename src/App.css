@@ -36,3 +36,34 @@
     transform: rotate(360deg);
   }
 }
+
+/* スマホ向けのスタイル調整 */
+@media (max-width: 768px) {
+  .App-header {
+    font-size: calc(8px + 2vmin); /* フォントサイズを少し小さく */
+    padding: 20px; /* 余白を追加 */
+  }
+
+  .App-logo {
+    height: 30vmin; /* ロゴサイズを縮小 */
+  }
+
+  .App-link {
+    font-size: 14px; /* リンクのフォントサイズを調整 */
+  }
+}
+
+@media (max-width: 480px) {
+  .App-header {
+    font-size: calc(6px + 2vmin); /* さらに小さい画面向けにフォントサイズを調整 */
+    padding: 10px; /* 余白をさらに小さく */
+  }
+
+  .App-logo {
+    height: 25vmin; /* ロゴサイズをさらに縮小 */
+  }
+
+  .App-link {
+    font-size: 12px; /* リンクのフォントサイズをさらに調整 */
+  }
+}

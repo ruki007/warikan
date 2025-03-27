@@ -10,7 +10,7 @@ const ExpenseForm = ({ projectName, members }) => {
   const [error, setError] = useState('');
   const [transfers, setTransfers] = useState([]);
   const [expenses, setExpenses] = useState([]); // 支払い記録を保存するステート
-
+  
   const handlePayeeChange = (index, value) => {
     const newPayees = [...payees];
     newPayees[index] = value;
@@ -80,18 +80,19 @@ const ExpenseForm = ({ projectName, members }) => {
         <div>
           <label>支払者:</label>
           <select value={payer} onChange={(e) => setPayer(e.target.value)} required>
-            <option value="">選択してください</option>
+            <option value="">支払者を選択してください</option>
             {members.map((member, index) => (
               <option key={index} value={member}>{member}</option>
             ))}
           </select>
         </div>
         <div>
-          <label>金額:</label>
+          <label>金額 (円):</label>
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            placeholder="例: 1000"
             required
           />
         </div>
@@ -100,7 +101,7 @@ const ExpenseForm = ({ projectName, members }) => {
           {payees.map((payee, index) => (
             <div key={index}>
               <select value={payee} onChange={(e) => handlePayeeChange(index, e.target.value)} required>
-                <option value="">選択してください</option>
+                <option value="">受取者を選択してください</option>
                 {members.map((member, idx) => (
                   <option key={idx} value={member}>{member}</option>
                 ))}
@@ -108,16 +109,16 @@ const ExpenseForm = ({ projectName, members }) => {
               </select>
             </div>
           ))}
-          <button type="button" onClick={handleAddPayee}>+</button>
+          <button type="button" onClick={handleAddPayee}>受取者を追加</button>
         </div>
-        <button type="submit">記録</button>
+        <button type="submit">記録を保存</button>
       </form>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <h2>支払い記録</h2>
       <ul>
         {expenses.map((expense, index) => (
           <li key={index}>
-            {expense.payer} が {expense.amount} 円を {expense.payees.join(', ')} に支払った
+            {expense.payer} が {expense.amount} 円を {expense.payees.join(', ')} に支払いました
           </li>
         ))}
       </ul>

@@ -9,8 +9,8 @@ const ExpenseForm = ({ projectName, members }) => {
   const [payees, setPayees] = useState([]);
   const [error, setError] = useState('');
   const [transfers, setTransfers] = useState([]);
-  const [expenses, setExpenses] = useState([]); // 支払い記録を保存するステート
-  const [editingExpense, setEditingExpense] = useState(null); // 編集中の支払い記録
+  const [expenses, setExpenses] = useState([]);
+  const [editingExpense, setEditingExpense] = useState(null);
 
   const handlePayeeChange = (index, value) => {
     const newPayees = [...payees];
@@ -37,19 +37,18 @@ const ExpenseForm = ({ projectName, members }) => {
         })
       });
       alert('支出が記録されました');
-      await fetchExpenses(); // 新しい支払い記録を取得
-      await fetchTransfers(); // 支払い指示を再計算
+      await fetchExpenses();
+      await fetchTransfers();
     } catch (error) {
       setError('エラーが発生しました: ' + error.message);
     }
   };
-const resetinput = () => {  
-  setPayer('');
-  setAmount('');
-  setPayees([]);
-};
 
-
+  const resetInput = () => {
+    setPayer('');
+    setAmount('');
+    setPayees([]);
+  };
 
   const fetchExpenses = async () => {
     try {
@@ -57,7 +56,7 @@ const resetinput = () => {
       const projectDoc = await getDoc(projectRef);
       if (projectDoc.exists()) {
         const projectData = projectDoc.data();
-        setExpenses(projectData.expenses || []); // Firestoreから支払い記録を取得
+        setExpenses(projectData.expenses || []);
       } else {
         setError('プロジェクトが見つかりません');
       }
@@ -82,23 +81,21 @@ const resetinput = () => {
     setAmount(expense.amount);
     setPayees(expense.payees);
   };
-  const DeleteExpense = async (expense) => {
+
+  const deleteExpense = async (expense) => {
     setError('');
-  
+
     try {
       const projectRef = doc(db, "projects", projectName);
-      const updatedExpenses = expenses.filter((exp) => exp !== expense); // 削除対象を除外
-      await updateDoc(projectRef, { expenses: updatedExpenses }); // Firestoreを更新
-      setExpenses(updatedExpenses); // ローカルステートを更新
+      const updatedExpenses = expenses.filter((exp) => exp !== expense);
+      await updateDoc(projectRef, { expenses: updatedExpenses });
+      setExpenses(updatedExpenses);
       alert('支払い記録が削除されました');
-      await fetchTransfers(); // 支払い指示を再計算
+      await fetchTransfers();
     } catch (error) {
       setError('支払い記録の削除中にエラーが発生しました: ' + error.message);
     }
   };
-
-    
-
 
   const updateExpense = async (e) => {
     e.preventDefault();
@@ -115,7 +112,7 @@ const resetinput = () => {
       setExpenses(updatedExpenses);
       setEditingExpense(null);
       alert('支払い記録が更新されました');
-      await fetchTransfers(); // 支払い指示を再計算
+      await fetchTransfers();
     } catch (error) {
       setError('支払い記録の更新中にエラーが発生しました: ' + error.message);
     }
@@ -124,73 +121,70 @@ const resetinput = () => {
   useEffect(() => {
     fetchExpenses();
     fetchTransfers();
-  }, [fetchExpenses, fetchTransfers]);
+  }, []);
 
   return (
-    <div style = {{ textAlign: 'center' }}>
-      <h1>Your Record</h1>
+    <div style={{ textAlign: 'center' }}>
+      <h1>支出記録</h1>
       <form onSubmit={editingExpense ? updateExpense : handleSubmit}>
         <div>
-          <label>Payer:</label>
+          <label>支払者:</label>
           <select value={payer} onChange={(e) => setPayer(e.target.value)} required>
-            <option value="">choose</option>
+            <option value="">支払者を選択</option>
             {members.map((member, index) => (
               <option key={index} value={member}>{member}</option>
             ))}
           </select>
         </div>
         <div>
-          <label>money:</label>
+          <label>金額 (円):</label>
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            placeholder="金額を入力"
             required
           />
         </div>
         <div>
-          <label>Payee:</label>
+          <label>受取人:</label>
           {payees.map((payee, index) => (
             <div key={index}>
               <select value={payee} onChange={(e) => handlePayeeChange(index, e.target.value)} required>
-                <option value="">Choose</option>
+                <option value="">受取人を選択</option>
                 {members.map((member, idx) => (
                   <option key={idx} value={member}>{member}</option>
                 ))}
-                <option value="全員">All</option>
+                <option value="全員">全員</option>
               </select>
             </div>
           ))}
-          <button type="button" onClick={handleAddPayee}>+</button>
-         
+          <button type="button" onClick={handleAddPayee}>受取人を追加</button>
         </div>
-        <button type="button" onClick={resetinput}>reset</button>
-        <button type="submit">{editingExpense ? '更新' : 'save'}</button>
+        <button type="button" onClick={resetInput}>リセット</button>
+        <button type="submit">{editingExpense ? '更新' : '保存'}</button>
       </form>
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      <h2>Record</h2>
+      <h2>記録一覧</h2>
       <ul>
-  {expenses.map((expense, index) => (
-    <li key={index}>
-      {expense.payer} pays {expense.amount} yen to {expense.payees.join(', ')} 
-      <button onClick={() => handleEditExpense(expense)}>Edit</button>
-      <button onClick={() => DeleteExpense(expense)}>Delete</button>
-    </li>
-  ))}
-</ul>
-      <h2>pays instruction</h2>
+        {expenses.map((expense, index) => (
+          <li key={index}>
+            {expense.payer} が {expense.amount} 円を {expense.payees.join(', ')} に支払いました
+            <button onClick={() => handleEditExpense(expense)}>編集</button>
+            <button onClick={() => deleteExpense(expense)}>削除</button>
+          </li>
+        ))}
+      </ul>
+      <h2>支払い指示</h2>
       <ul>
         {transfers.map((transfer, index) => (
           <li key={index}>
-            {transfer.from} pays {transfer.to}  {transfer.amount} Yen
+            {transfer.from} は {transfer.to} に {transfer.amount} 円支払う
           </li>
         ))}
       </ul>
     </div>
-  );  
+  );
 };
-
-
-
 
 export default ExpenseForm;
