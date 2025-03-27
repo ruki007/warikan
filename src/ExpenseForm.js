@@ -6,6 +6,7 @@ import { calculateBalances, calculateTransfers } from './calculate';
 const ExpenseForm = ({ projectName, members }) => {
   const [payer, setPayer] = useState('');
   const [amount, setAmount] = useState('');
+  const [purpose, setPurpose] = useState(''); // 用途を保存するステート
   const [payees, setPayees] = useState([]);
   const [error, setError] = useState('');
   const [transfers, setTransfers] = useState([]);
@@ -33,10 +34,12 @@ const ExpenseForm = ({ projectName, members }) => {
         expenses: arrayUnion({
           payer: payer,
           amount: parseFloat(amount),
+          purpose: purpose, // 用途を保存
           payees: finalPayees
         })
       });
       alert('支出が記録されました');
+      resetInput();
       await fetchExpenses();
       await fetchTransfers();
     } catch (error) {
@@ -47,6 +50,7 @@ const ExpenseForm = ({ projectName, members }) => {
   const resetInput = () => {
     setPayer('');
     setAmount('');
+    setPurpose('');
     setPayees([]);
   };
 
@@ -75,49 +79,6 @@ const ExpenseForm = ({ projectName, members }) => {
     }
   };
 
-  const handleEditExpense = (expense) => {
-    setEditingExpense(expense);
-    setPayer(expense.payer);
-    setAmount(expense.amount);
-    setPayees(expense.payees);
-  };
-
-  const deleteExpense = async (expense) => {
-    setError('');
-
-    try {
-      const projectRef = doc(db, "projects", projectName);
-      const updatedExpenses = expenses.filter((exp) => exp !== expense);
-      await updateDoc(projectRef, { expenses: updatedExpenses });
-      setExpenses(updatedExpenses);
-      alert('支払い記録が削除されました');
-      await fetchTransfers();
-    } catch (error) {
-      setError('支払い記録の削除中にエラーが発生しました: ' + error.message);
-    }
-  };
-
-  const updateExpense = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    try {
-      const projectRef = doc(db, "projects", projectName);
-      const updatedExpenses = expenses.map((expense) =>
-        expense === editingExpense
-          ? { payer, amount: parseFloat(amount), payees }
-          : expense
-      );
-      await updateDoc(projectRef, { expenses: updatedExpenses });
-      setExpenses(updatedExpenses);
-      setEditingExpense(null);
-      alert('支払い記録が更新されました');
-      await fetchTransfers();
-    } catch (error) {
-      setError('支払い記録の更新中にエラーが発生しました: ' + error.message);
-    }
-  };
-
   useEffect(() => {
     fetchExpenses();
     fetchTransfers();
@@ -126,7 +87,7 @@ const ExpenseForm = ({ projectName, members }) => {
   return (
     <div style={{ textAlign: 'center' }}>
       <h1>支出記録</h1>
-      <form onSubmit={editingExpense ? updateExpense : handleSubmit}>
+      <form onSubmit={handleSubmit}>
         <div>
           <label>支払者:</label>
           <select value={payer} onChange={(e) => setPayer(e.target.value)} required>
@@ -147,6 +108,16 @@ const ExpenseForm = ({ projectName, members }) => {
           />
         </div>
         <div>
+          <label>用途:</label>
+          <input
+            type="text"
+            value={purpose}
+            onChange={(e) => setPurpose(e.target.value)}
+            placeholder="例: ホテル代、ドライブ代"
+            required
+          />
+        </div>
+        <div>
           <label>受取人:</label>
           {payees.map((payee, index) => (
             <div key={index}>
@@ -162,16 +133,14 @@ const ExpenseForm = ({ projectName, members }) => {
           <button type="button" onClick={handleAddPayee}>受取人を追加</button>
         </div>
         <button type="button" onClick={resetInput}>リセット</button>
-        <button type="submit">{editingExpense ? '更新' : '保存'}</button>
+        <button type="submit">保存</button>
       </form>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <h2>記録一覧</h2>
       <ul>
         {expenses.map((expense, index) => (
           <li key={index}>
-            {expense.payer} が {expense.amount} 円を {expense.payees.join(', ')} に支払いました
-            <button onClick={() => handleEditExpense(expense)}>編集</button>
-            <button onClick={() => deleteExpense(expense)}>削除</button>
+            {expense.payer} が {expense.amount} 円 ({expense.purpose}) を {expense.payees.join(', ')} に支払いました
           </li>
         ))}
       </ul>
