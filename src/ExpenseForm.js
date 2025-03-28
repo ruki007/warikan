@@ -12,6 +12,21 @@ const ExpenseForm = ({ projectName, members }) => {
   const [transfers, setTransfers] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [editingExpense, setEditingExpense] = useState(null);
+  const [documentId, setDocumentId] = useState(''); // ドキュメントIDを保存
+
+  const fetchDocumentId = async () => {
+    try {
+      const projectRef = doc(db, "projects", projectName);
+      const projectDoc = await getDoc(projectRef);
+      if (projectDoc.exists()) {
+        setDocumentId(projectDoc.id); // ドキュメントIDを保存
+      } else {
+        setError('プロジェクトが見つかりません');
+      }
+    } catch (error) {
+      setError('ドキュメントIDの取得中にエラーが発生しました: ' + error.message);
+    }
+  };
 
   const handlePayeeChange = (member) => {
     if (payees.includes(member)) {
@@ -141,6 +156,7 @@ const ExpenseForm = ({ projectName, members }) => {
   useEffect(() => {
     fetchExpenses();
     fetchTransfers();
+    fetchDocumentId();
   }, []);
 
   return (
@@ -149,7 +165,7 @@ const ExpenseForm = ({ projectName, members }) => {
       <form onSubmit={handleSubmit}>
         <div>
           <label>支払者:</label>
-          <button onClick={handleShare}>共有リンクをコピー</button>
+          <button type="button" onClick={handleShare}>共有リンクをコピー</button>
           <select value={payer} onChange={(e) => setPayer(e.target.value)} required>
             <option value="">支払者を選択</option>
             {members.map((member, index) => (
@@ -179,8 +195,8 @@ const ExpenseForm = ({ projectName, members }) => {
         </div>
         <div>
           <label>受取人:</label>
-          <div>
-            <label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <label style={{ marginRight: '10px' }}>
               <input
                 type="checkbox"
                 checked={payees.includes('全員')}
@@ -188,10 +204,8 @@ const ExpenseForm = ({ projectName, members }) => {
               />
               全員
             </label>
-          </div>
-          {members.map((member, index) => (
-            <div key={index}>
-              <label>
+            {members.map((member, index) => (
+              <label key={index} style={{ marginRight: '10px' }}>
                 <input
                   type="checkbox"
                   checked={payees.includes(member)}
@@ -199,8 +213,8 @@ const ExpenseForm = ({ projectName, members }) => {
                 />
                 {member}
               </label>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
         <button type="button" onClick={resetInput}>リセット</button>
         <button type="submit">{editingExpense ? '更新' : '保存'}</button>
