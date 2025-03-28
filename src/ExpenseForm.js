@@ -29,22 +29,32 @@ const ExpenseForm = ({ projectName, members }) => {
   };
 
   const handlePayeeChange = (member) => {
+    let newPayees;
     if (payees.includes(member)) {
       // 既に選択されている場合は解除
-      setPayees(payees.filter((payee) => payee !== member));
+      newPayees = payees.filter((payee) => payee !== member);
+      // メンバーが外されたので、全員のチェックも外す
+      newPayees = newPayees.filter((payee) => payee !== '全員');
     } else {
       // 選択されていない場合は追加
-      setPayees([...payees, member]);
+      newPayees = [...payees, member];
+      // もし選択後にすべてのメンバーが選択された状態になれば、全員もチェック
+      if (members.every(m => newPayees.includes(m) || m === member)) {
+        if (!newPayees.includes('全員')) {
+          newPayees.push('全員');
+        }
+      }
     }
+    setPayees(newPayees);
   };
 
   const handleSelectAll = () => {
     if (payees.includes('全員')) {
-      // 「全員」が選択されている場合は解除
+      // 「全員」が選択されている場合は全て解除
       setPayees([]);
     } else {
-      // 「全員」を選択
-      setPayees(['全員']);
+      // 「全員」を選択し、全てのメンバーも選択
+      setPayees(['全員', ...members]);
     }
   };
 
@@ -136,12 +146,18 @@ const ExpenseForm = ({ projectName, members }) => {
     }
   };
 
-  const handleShare = () => {
-    const shareLink = `${window.location.origin}/?project=${projectName}`;
+
+const handleShare = () => {
+  // documentIdがある場合のみ共有リンクを生成
+  if (documentId) {
+    const shareLink = `${window.location.origin}/warikan/shared/${documentId}`;
     navigator.clipboard.writeText(shareLink)
       .then(() => alert('リンクがコピーされました: ' + shareLink))
       .catch(() => alert('リンクのコピーに失敗しました'));
-  };
+  } else {
+    setError('共有リンクの生成に必要なプロジェクト情報がありません');
+  }
+};
 
   const fetchTransfers = async () => {
     try {

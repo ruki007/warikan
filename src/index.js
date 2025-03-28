@@ -129,7 +129,9 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/new-game" element={<ProjectNameInput />} />
         <Route path="/load-game" element={<LoadGame />} />
-        <Route path="/load-game/?project=documentId" element={<LoadGameWithId />} />
+        <Route path="/load-game/:documentId" element={<LoadGameWithId />} />
+        <Route path="/shared/:documentId" element={<LoadGameWithId />} />
+        <Route path="/member-input/:projectName" element={<MemberInput />} />
       </Routes>
     </Router>
   );

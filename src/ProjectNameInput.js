@@ -18,7 +18,14 @@ const ProjectNameInput = ({ onProjectCreated }) => {
       setError('同じ名前の物があります。異なる名前を使用してください');
     } else {
       await setDoc(doc(db, "projects", projectName), { name: projectName });
-      onProjectCreated(projectName);
+      
+      // onProjectCreatedが関数として存在する場合のみ呼び出す
+      if (typeof onProjectCreated === 'function') {
+        onProjectCreated(projectName);
+      } else {
+        // プロジェクト作成後は、メンバー入力画面に移動
+        window.location.href = `/warikan/member-input/${projectName}`;
+      }
     }
   };
 
