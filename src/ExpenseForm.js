@@ -6,26 +6,31 @@ import { calculateBalances, calculateTransfers } from './calculate';
 const ExpenseForm = ({ projectName, members }) => {
   const [payer, setPayer] = useState('');
   const [amount, setAmount] = useState('');
-  const [purpose, setPurpose] = useState(''); // 用途を保存するステート
-  const [payees, setPayees] = useState(['']); // デフォルトで1つの受取人枠を設定
+  const [purpose, setPurpose] = useState('');
+  const [payees, setPayees] = useState([]); // チェックされた受取人を保存
   const [error, setError] = useState('');
   const [transfers, setTransfers] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const [editingExpense, setEditingExpense] = useState(null); // 編集中の支出記録
+  const [editingExpense, setEditingExpense] = useState(null);
 
-  const handlePayeeChange = (index, value) => {
-    const newPayees = [...payees];
-    newPayees[index] = value;
-    setPayees(newPayees);
+  const handlePayeeChange = (member) => {
+    if (payees.includes(member)) {
+      // 既に選択されている場合は解除
+      setPayees(payees.filter((payee) => payee !== member));
+    } else {
+      // 選択されていない場合は追加
+      setPayees([...payees, member]);
+    }
   };
 
-  const handleAddPayee = () => {
-    setPayees([...payees, '']);
-  };
-
-  const handleRemovePayee = (index) => {
-    const newPayees = payees.filter((_, i) => i !== index);
-    setPayees(newPayees);
+  const handleSelectAll = () => {
+    if (payees.includes('全員')) {
+      // 「全員」が選択されている場合は解除
+      setPayees([]);
+    } else {
+      // 「全員」を選択
+      setPayees(['全員']);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -37,7 +42,6 @@ const ExpenseForm = ({ projectName, members }) => {
       const finalPayees = payees.includes('全員') ? members : payees;
 
       if (editingExpense) {
-        // 編集モードの場合
         const updatedExpenses = expenses.map((expense) =>
           expense === editingExpense
             ? { payer, amount: parseFloat(amount), purpose, payees: finalPayees }
@@ -48,7 +52,6 @@ const ExpenseForm = ({ projectName, members }) => {
         setEditingExpense(null);
         alert('支出が更新されました');
       } else {
-        // 新規追加の場合
         await updateDoc(projectRef, {
           expenses: arrayUnion({
             payer: payer,
@@ -68,38 +71,11 @@ const ExpenseForm = ({ projectName, members }) => {
     }
   };
 
-  const handleEditExpense = (expense) => {
-    setEditingExpense(expense);
-    setPayer(expense.payer);
-    setAmount(expense.amount);
-    setPurpose(expense.purpose);
-    setPayees(expense.payees);
-  };
-
-  const handleDeleteExpense = async (expense) => {
-    if (!window.confirm('この支出記録を削除しますか？')) {
-      return;
-    }
-
-    setError('');
-
-    try {
-      const projectRef = doc(db, "projects", projectName);
-      const updatedExpenses = expenses.filter((exp) => exp !== expense);
-      await updateDoc(projectRef, { expenses: updatedExpenses });
-      setExpenses(updatedExpenses);
-      alert('支出が削除されました');
-      await fetchTransfers();
-    } catch (error) {
-      setError('支出の削除中にエラーが発生しました: ' + error.message);
-    }
-  };
-
   const resetInput = () => {
     setPayer('');
     setAmount('');
     setPurpose('');
-    setPayees(['']); // リセット時に受取人を1つに戻す
+    setPayees([]);
     setEditingExpense(null);
   };
 
@@ -168,21 +144,28 @@ const ExpenseForm = ({ projectName, members }) => {
         </div>
         <div>
           <label>受取人:</label>
-          {payees.map((payee, index) => (
+          <div>
+            <label>
+              <input
+                type="checkbox"
+                checked={payees.includes('全員')}
+                onChange={handleSelectAll}
+              />
+              全員
+            </label>
+          </div>
+          {members.map((member, index) => (
             <div key={index}>
-              <select value={payee} onChange={(e) => handlePayeeChange(index, e.target.value)} required>
-                <option value="">受取人を選択</option>
-                {members.map((member, idx) => (
-                  <option key={idx} value={member}>{member}</option>
-                ))}
-                <option value="全員">全員</option>
-              </select>
-              {payees.length > 1 && (
-                <button type="button" onClick={() => handleRemovePayee(index)}>削除</button>
-              )}
+              <label>
+                <input
+                  type="checkbox"
+                  checked={payees.includes(member)}
+                  onChange={() => handlePayeeChange(member)}
+                />
+                {member}
+              </label>
             </div>
           ))}
-          <button type="button" onClick={handleAddPayee}>受取人を追加</button>
         </div>
         <button type="button" onClick={resetInput}>リセット</button>
         <button type="submit">{editingExpense ? '更新' : '保存'}</button>
