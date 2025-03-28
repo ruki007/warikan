@@ -33,6 +33,33 @@ const ExpenseForm = ({ projectName, members }) => {
     }
   };
 
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setPayer(expense.payer);
+    setAmount(expense.amount);
+    setPurpose(expense.purpose);
+    setPayees(expense.payees);
+  };
+  
+  const handleDeleteExpense = async (expense) => {
+    if (!window.confirm('この支出記録を削除しますか？')) {
+      return;
+    }
+  
+    setError('');
+  
+    try {
+      const projectRef = doc(db, "projects", projectName);
+      const updatedExpenses = expenses.filter((exp) => exp !== expense);
+      await updateDoc(projectRef, { expenses: updatedExpenses });
+      setExpenses(updatedExpenses);
+      alert('支出が削除されました');
+      await fetchTransfers();
+    } catch (error) {
+      setError('支出の削除中にエラーが発生しました: ' + error.message);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -94,6 +121,13 @@ const ExpenseForm = ({ projectName, members }) => {
     }
   };
 
+  const handleShare = () => {
+    const shareLink = `${window.location.origin}/?project=${projectName}`;
+    navigator.clipboard.writeText(shareLink)
+      .then(() => alert('リンクがコピーされました: ' + shareLink))
+      .catch(() => alert('リンクのコピーに失敗しました'));
+  };
+
   const fetchTransfers = async () => {
     try {
       const balances = await calculateBalances(projectName);
@@ -115,6 +149,7 @@ const ExpenseForm = ({ projectName, members }) => {
       <form onSubmit={handleSubmit}>
         <div>
           <label>支払者:</label>
+          <button onClick={handleShare}>共有リンクをコピー</button>
           <select value={payer} onChange={(e) => setPayer(e.target.value)} required>
             <option value="">支払者を選択</option>
             {members.map((member, index) => (
