@@ -6,21 +6,83 @@ import { calculateBalances, calculateTransfers } from './calculate';
 const ExpenseForm = ({ projectName, members }) => {
   const [payer, setPayer] = useState('');
   const [amount, setAmount] = useState('');
-  const [purpose, setPurpose] = useState(''); // 用途を保存するステート
-  const [payees, setPayees] = useState([]);
+  const [purpose, setPurpose] = useState('');
+  const [payees, setPayees] = useState([]); // チェックされた受取人を保存
   const [error, setError] = useState('');
   const [transfers, setTransfers] = useState([]);
   const [expenses, setExpenses] = useState([]);
-  const [editingExpense, setEditingExpense] = useState(null); // 編集中の支出記録
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [documentId, setDocumentId] = useState(''); // ドキュメントIDを保存
 
-  const handlePayeeChange = (index, value) => {
-    const newPayees = [...payees];
-    newPayees[index] = value;
+  const fetchDocumentId = async () => {
+    try {
+      const projectRef = doc(db, "projects", projectName);
+      const projectDoc = await getDoc(projectRef);
+      if (projectDoc.exists()) {
+        setDocumentId(projectDoc.id); // ドキュメントIDを保存
+      } else {
+        setError('プロジェクトが見つかりません');
+      }
+    } catch (error) {
+      setError('ドキュメントIDの取得中にエラーが発生しました: ' + error.message);
+    }
+  };
+
+  const handlePayeeChange = (member) => {
+    let newPayees;
+    if (payees.includes(member)) {
+      // 既に選択されている場合は解除
+      newPayees = payees.filter((payee) => payee !== member);
+      // メンバーが外されたので、全員のチェックも外す
+      newPayees = newPayees.filter((payee) => payee !== '全員');
+    } else {
+      // 選択されていない場合は追加
+      newPayees = [...payees, member];
+      // もし選択後にすべてのメンバーが選択された状態になれば、全員もチェック
+      if (members.every(m => newPayees.includes(m) || m === member)) {
+        if (!newPayees.includes('全員')) {
+          newPayees.push('全員');
+        }
+      }
+    }
     setPayees(newPayees);
   };
 
-  const handleAddPayee = () => {
-    setPayees([...payees, '']);
+  const handleSelectAll = () => {
+    if (payees.includes('全員')) {
+      // 「全員」が選択されている場合は全て解除
+      setPayees([]);
+    } else {
+      // 「全員」を選択し、全てのメンバーも選択
+      setPayees(['全員', ...members]);
+    }
+  };
+
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setPayer(expense.payer);
+    setAmount(expense.amount);
+    setPurpose(expense.purpose);
+    setPayees(expense.payees);
+  };
+  
+  const handleDeleteExpense = async (expense) => {
+    if (!window.confirm('この支出記録を削除しますか？')) {
+      return;
+    }
+  
+    setError('');
+  
+    try {
+      const projectRef = doc(db, "projects", projectName);
+      const updatedExpenses = expenses.filter((exp) => exp !== expense);
+      await updateDoc(projectRef, { expenses: updatedExpenses });
+      setExpenses(updatedExpenses);
+      alert('支出が削除されました');
+      await fetchTransfers();
+    } catch (error) {
+      setError('支出の削除中にエラーが発生しました: ' + error.message);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -32,7 +94,6 @@ const ExpenseForm = ({ projectName, members }) => {
       const finalPayees = payees.includes('全員') ? members : payees;
 
       if (editingExpense) {
-        // 編集モードの場合
         const updatedExpenses = expenses.map((expense) =>
           expense === editingExpense
             ? { payer, amount: parseFloat(amount), purpose, payees: finalPayees }
@@ -43,7 +104,6 @@ const ExpenseForm = ({ projectName, members }) => {
         setEditingExpense(null);
         alert('支出が更新されました');
       } else {
-        // 新規追加の場合
         await updateDoc(projectRef, {
           expenses: arrayUnion({
             payer: payer,
@@ -60,29 +120,6 @@ const ExpenseForm = ({ projectName, members }) => {
       await fetchTransfers();
     } catch (error) {
       setError('エラーが発生しました: ' + error.message);
-    }
-  };
-
-  const handleEditExpense = (expense) => {
-    setEditingExpense(expense);
-    setPayer(expense.payer);
-    setAmount(expense.amount);
-    setPurpose(expense.purpose);
-    setPayees(expense.payees);
-  };
-
-  const handleDeleteExpense = async (expense) => {
-    setError('');
-
-    try {
-      const projectRef = doc(db, "projects", projectName);
-      const updatedExpenses = expenses.filter((exp) => exp !== expense);
-      await updateDoc(projectRef, { expenses: updatedExpenses });
-      setExpenses(updatedExpenses);
-      alert('支出が削除されました');
-      await fetchTransfers();
-    } catch (error) {
-      setError('支出の削除中にエラーが発生しました: ' + error.message);
     }
   };
 
@@ -109,6 +146,19 @@ const ExpenseForm = ({ projectName, members }) => {
     }
   };
 
+
+const handleShare = () => {
+  // documentIdがある場合のみ共有リンクを生成
+  if (documentId) {
+    const shareLink = `${window.location.origin}/warikan/load-game/${documentId}`;
+    navigator.clipboard.writeText(shareLink)
+      .then(() => alert('リンクがコピーされました: ' + shareLink))
+      .catch(() => alert('リンクのコピーに失敗しました'));
+  } else {
+    setError('共有リンクの生成に必要なプロジェクト情報がありません');
+  }
+};
+
   const fetchTransfers = async () => {
     try {
       const balances = await calculateBalances(projectName);
@@ -122,6 +172,7 @@ const ExpenseForm = ({ projectName, members }) => {
   useEffect(() => {
     fetchExpenses();
     fetchTransfers();
+    fetchDocumentId();
   }, []);
 
   return (
@@ -130,6 +181,7 @@ const ExpenseForm = ({ projectName, members }) => {
       <form onSubmit={handleSubmit}>
         <div>
           <label>支払者:</label>
+          <button type="button" onClick={handleShare}>共有リンクをコピー</button>
           <select value={payer} onChange={(e) => setPayer(e.target.value)} required>
             <option value="">支払者を選択</option>
             {members.map((member, index) => (
@@ -159,18 +211,26 @@ const ExpenseForm = ({ projectName, members }) => {
         </div>
         <div>
           <label>受取人:</label>
-          {payees.map((payee, index) => (
-            <div key={index}>
-              <select value={payee} onChange={(e) => handlePayeeChange(index, e.target.value)} required>
-                <option value="">受取人を選択</option>
-                {members.map((member, idx) => (
-                  <option key={idx} value={member}>{member}</option>
-                ))}
-                <option value="全員">全員</option>
-              </select>
-            </div>
-          ))}
-          <button type="button" onClick={handleAddPayee}>受取人を追加</button>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <label style={{ marginRight: '10px' }}>
+              <input
+                type="checkbox"
+                checked={payees.includes('全員')}
+                onChange={handleSelectAll}
+              />
+              全員
+            </label>
+            {members.map((member, index) => (
+              <label key={index} style={{ marginRight: '10px' }}>
+                <input
+                  type="checkbox"
+                  checked={payees.includes(member)}
+                  onChange={() => handlePayeeChange(member)}
+                />
+                {member}
+              </label>
+            ))}
+          </div>
         </div>
         <button type="button" onClick={resetInput}>リセット</button>
         <button type="submit">{editingExpense ? '更新' : '保存'}</button>
