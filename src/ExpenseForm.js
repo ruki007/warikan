@@ -150,7 +150,7 @@ const ExpenseForm = ({ projectName, members }) => {
 const handleShare = () => {
   // documentIdがある場合のみ共有リンクを生成
   if (documentId) {
-    const shareLink = `${window.location.origin}/warikan/shared/${documentId}`;
+    const shareLink = `${window.location.origin}/warikan/loda-game/${documentId}`;
     navigator.clipboard.writeText(shareLink)
       .then(() => alert('リンクがコピーされました: ' + shareLink))
       .catch(() => alert('リンクのコピーに失敗しました'));
