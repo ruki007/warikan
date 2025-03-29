@@ -4,7 +4,6 @@ import { doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
 import { calculateBalances, calculateTransfers } from './calculate';
 
 const ExpenseForm = ({ projectName, members }) => {
-  
   const [payer, setPayer] = useState('');
   const [amount, setAmount] = useState('');
   const [purpose, setPurpose] = useState('');
@@ -17,9 +16,8 @@ const ExpenseForm = ({ projectName, members }) => {
 
   const fetchDocumentId = async () => {
     try {
-      const projectsRef = collection(db, "projects");
-      const q = query(projectsRef, where("name", "==", projectName));
-      const querySnapshot = await getDocs(q);
+      const projectRef = doc(db, "projects", projectName);
+      const projectDoc = await getDoc(projectRef);
       if (projectDoc.exists()) {
         setDocumentId(projectDoc.id); // ドキュメントIDを保存
       } else {
