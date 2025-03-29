@@ -8,13 +8,13 @@
       // GitHub Pagesのサブディレクトリに対応するためのベースパス
       const basePath = '/warikan';
 
-      // React Router によるルーティングを処理するためにリダイレクト
-      if (currentPath.startsWith(basePath)) {
-        const newUrl = `${basePath}${currentPath.replace(basePath, '')}`;
-        window.location.replace(newUrl);
+      // すでにindex.htmlにリダイレクトされている場合は処理を終了
+      if (currentPath === `${basePath}/index.html`) {
+        console.log('Already redirected to index.html');
       } else {
-        // ベースパスが一致しない場合はトップページにリダイレクト
-        window.location.replace(`${basePath}/`);
+        // React Router によるルーティングを処理するためにリダイレクト
+        const newUrl = `${basePath}/index.html?redirect=${encodeURIComponent(currentPath)}`;
+        window.location.replace(newUrl);
       }
     </script>
   </head>
