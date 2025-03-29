@@ -1,8 +1,22 @@
-
 <!DOCTYPE html>
 <html>
   <head>
-    <meta http-equiv="refresh" content="0; URL='/warikan/load-game/izu'" />
+    <script>
+      // 現在のURLパスを取得
+      const currentPath = window.location.pathname;
+
+      // GitHub Pagesのサブディレクトリに対応するためのベースパス
+      const basePath = '/warikan';
+
+      // React Router によるルーティングを処理するためにリダイレクト
+      if (currentPath.startsWith(basePath)) {
+        const newUrl = `${basePath}${currentPath.replace(basePath, '')}`;
+        window.location.replace(newUrl);
+      } else {
+        // ベースパスが一致しない場合はトップページにリダイレクト
+        window.location.replace(`${basePath}/`);
+      }
+    </script>
   </head>
   <body>
     Redirecting...
