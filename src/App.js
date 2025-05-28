@@ -1,60 +1,215 @@
+
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
 import ProjectNameInput from './ProjectNameInput';
 import MemberInput from './MemberInput';
 import ExpenseForm from './ExpenseForm';
 import { db } from './firebaseConfig';
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 
-// メインアプリコンポーネント
-const AppContent = () => {
+// ホームページコンポーネント
+const Home = () => {
+  return (
+    <div style={{ textAlign: 'center', padding: '20px' }}>
+      <h1>Warika</h1>
+      <div style={{ marginBottom: '20px' }}>
+        <Link to="/new-game">
+          <button style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            margin: '10px'
+          }}>
+            New game
+          </button>
+        </Link>
+      </div>
+      <div>
+        <Link to="/load-game">
+          <button style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            margin: '10px'
+          }}>
+            Load game
+          </button>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+// ゲーム読み込みページ
+const LoadGame = () => {
+  const [projectName, setProjectName] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const handleSearch = async () => {
+    setError('');
+    try {
+      const projectsRef = collection(db, "projects");
+      const q = query(projectsRef, where("name", "==", projectName));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        const docId = querySnapshot.docs[0].id;
+        navigate(`/load-game/${docId}`);
+      } else {
+        setError('プロジェクトが見つかりません');
+      }
+    } catch (error) {
+      setError('エラーが発生しました: ' + error.message);
+    }
+  };
+
+  return (
+    <div style={{ textAlign: 'center', padding: '20px' }}>
+      <h1>Load Game</h1>
+      <div style={{ marginBottom: '20px' }}>
+        <input
+          type="text"
+          value={projectName}
+          onChange={(e) => setProjectName(e.target.value)}
+          placeholder="プロジェクト名を入力"
+          style={{
+            padding: '10px',
+            fontSize: '16px',
+            width: '300px',
+            marginRight: '10px'
+          }}
+        />
+        <button 
+          onClick={handleSearch}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          検索
+        </button>
+      </div>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <Link to="/">
+        <button style={{
+          padding: '8px 16px',
+          backgroundColor: '#6c757d',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}>
+          ← ホームに戻る
+        </button>
+      </Link>
+    </div>
+  );
+};
+
+// プロジェクト表示コンポーネント
+const LoadGameWithId = () => {
+  const { documentId } = useParams();
+  const [projectName, setProjectName] = useState('');
+  const [members, setMembers] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const projectRef = doc(db, "projects", documentId);
+        const projectDoc = await getDoc(projectRef);
+        if (projectDoc.exists()) {
+          const projectData = projectDoc.data();
+          setProjectName(projectData.name);
+          setMembers(projectData.members || []);
+          setExpenses(projectData.expenses || []);
+        } else {
+          alert('プロジェクトが見つかりません');
+        }
+      } catch (error) {
+        alert('エラーが発生しました: ' + error.message);
+      }
+      setLoading(false);
+    };
+
+    fetchProject();
+  }, [documentId]);
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '20px' }}>
+        <h1>Now loading...</h1>
+        <div className="progress-bar">
+          <div className="progress"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <h1>Team name: {projectName}</h1>
+      <ExpenseForm projectName={projectName} members={members} />
+    </div>
+  );
+};
+
+// 新規プロジェクト作成のラッパー
+const NewGameWrapper = () => {
   const navigate = useNavigate();
 
   const handleProjectCreated = (name) => {
     console.log('プロジェクト作成完了:', name);
-    // MemberInputページに遷移
     navigate(`/project/${encodeURIComponent(name)}/members`);
   };
 
-  const handleMembersCreated = (memberList, projectName) => {
-    console.log('メンバー作成完了:', memberList);
-    // ExpenseFormページに遷移
-    navigate(`/project/${encodeURIComponent(projectName)}/expenses`);
-  };
-
   return (
-    <Routes>
-      <Route 
-        path="/" 
-        element={<ProjectNameInput onProjectCreated={handleProjectCreated} />} 
-      />
-      <Route 
-        path="/project/:projectName/members" 
-        element={<MemberInputWrapper onMembersCreated={handleMembersCreated} />} 
-      />
-      <Route 
-        path="/project/:projectName/expenses" 
-        element={<ExpenseFormWrapper />} 
-      />
-      <Route 
-        path="/shared/:documentId" 
-        element={<SharedProject />} 
-      />
-    </Routes>
+    <div>
+      <Link to="/">
+        <button style={{
+          margin: '10px',
+          padding: '8px 16px',
+          backgroundColor: '#6c757d',
+          color: 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
+        }}>
+          ← ホームに戻る
+        </button>
+      </Link>
+      <ProjectNameInput onProjectCreated={handleProjectCreated} />
+    </div>
   );
 };
 
 // MemberInputのラッパーコンポーネント
-const MemberInputWrapper = ({ onMembersCreated }) => {
+const MemberInputWrapper = () => {
   const { projectName } = useParams();
   const navigate = useNavigate();
 
-  const handleBackToProject = () => {
-    navigate('/');
+  const handleMembersCreated = (memberList) => {
+    console.log('メンバー作成完了:', memberList);
+    navigate(`/project/${encodeURIComponent(projectName)}/expenses`);
   };
 
-  const handleMembersCreatedLocal = (memberList) => {
-    onMembersCreated(memberList, projectName);
+  const handleBackToProject = () => {
+    navigate('/new-game');
   };
 
   return (
@@ -75,7 +230,7 @@ const MemberInputWrapper = ({ onMembersCreated }) => {
       </button>
       <MemberInput 
         projectName={decodeURIComponent(projectName)}
-        onMembersCreated={handleMembersCreatedLocal}
+        onMembersCreated={handleMembersCreated}
       />
     </div>
   );
@@ -146,55 +301,19 @@ const ExpenseFormWrapper = () => {
   );
 };
 
-// 共有プロジェクト表示コンポーネント
-const SharedProject = () => {
-  const { documentId } = useParams();
-  const [projectData, setProjectData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    const fetchSharedProject = async () => {
-      try {
-        const projectRef = doc(db, "projects", documentId);
-        const projectDoc = await getDoc(projectRef);
-        
-        if (projectDoc.exists()) {
-          setProjectData(projectDoc.data());
-        } else {
-          setError('共有プロジェクトが見つかりません');
-        }
-      } catch (error) {
-        console.error('共有プロジェクト取得エラー:', error);
-        setError('データの取得中にエラーが発生しました: ' + error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSharedProject();
-  }, [documentId]);
-
-  if (loading) return <div style={{ textAlign: 'center', padding: '20px' }}>読み込み中...</div>;
-  if (error) return <div style={{ color: 'red', textAlign: 'center', padding: '20px' }}>{error}</div>;
-  if (!projectData) return <div style={{ textAlign: 'center', padding: '20px' }}>プロジェクトが見つかりません</div>;
-
-  return (
-    <div>
-      <h1 style={{ textAlign: 'center' }}>共有プロジェクト: {projectData.name}</h1>
-      <ExpenseForm 
-        projectName={documentId}
-        members={projectData.members || []}
-      />
-    </div>
-  );
-};
-
 // メインAppコンポーネント
 const App = () => {
   return (
-    <Router>
-      <AppContent />
+    <Router basename="/warikan">
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/new-game" element={<NewGameWrapper />} />
+        <Route path="/project/:projectName/members" element={<MemberInputWrapper />} />
+        <Route path="/project/:projectName/expenses" element={<ExpenseFormWrapper />} />
+        <Route path="/load-game" element={<LoadGame />} />
+        <Route path="/load-game/:documentId" element={<LoadGameWithId />} />
+        <Route path="/shared/:documentId" element={<LoadGameWithId />} />
+      </Routes>
     </Router>
   );
 };
