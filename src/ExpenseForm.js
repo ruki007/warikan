@@ -180,17 +180,17 @@ const handleShare = () => {
       <h1>支出記録</h1>
       <form onSubmit={handleSubmit}>
         <div>
-          <label>支払者:</label>
+          <label>立て替えた人:</label>
           <button type="button" onClick={handleShare}>共有リンクをコピー</button>
           <select value={payer} onChange={(e) => setPayer(e.target.value)} required>
-            <option value="">支払者を選択</option>
+            <option value="">立て替えた人を選択</option>
             {members.map((member, index) => (
               <option key={index} value={member}>{member}</option>
             ))}
           </select>
         </div>
         <div>
-          <label>金額 (円):</label>
+          <label>が金額 (円):</label>
           <input
             type="number"
             value={amount}
@@ -200,7 +200,7 @@ const handleShare = () => {
           />
         </div>
         <div>
-          <label>用途:</label>
+          <label>円を以下の目的の:</label>
           <input
             type="text"
             value={purpose}
@@ -210,7 +210,7 @@ const handleShare = () => {
           />
         </div>
         <div>
-          <label>受取人:</label>
+          
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
             <label style={{ marginRight: '10px' }}>
               <input
@@ -229,8 +229,10 @@ const handleShare = () => {
                 />
                 {member}
               </label>
+              
             ))}
           </div>
+          ために支払った。
         </div>
         <button type="button" onClick={resetInput}>リセット</button>
         <button type="submit">{editingExpense ? '更新' : '保存'}</button>
